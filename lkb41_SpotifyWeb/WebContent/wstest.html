@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Web Service Test</title>
+
+
+<script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+
+<script>
+var songList = null;
+
+$(document).ready(function(){
+	
+	$.get("GetArtistList", function(data){
+		console.log(data);
+	});
+	
+	
+	
+	/*
+	//next part JSON object calls .get http method 
+	$.get("GetSongList", function(data){
+		
+		//currently songList is string data, convert to JSON objects:
+			//songList = JSON.parse(data);
+		//now able to iterate through objects
+		
+		//^^^^don't need the above if servlet has set the content type to JSON already - data type already specified
+		
+		console.log(data);
+	});*/
+
+});
+
+/* 
+
+var song = {};	//in javascript, you can instantiate an object in this way - create obj in implicit fashion
+				//here, you've created an empty object
+
+//another way of generating objects in javascript:
+var song2 = {
+		"song_id": 1,
+		"title": "Alive",
+		"length": 10
+};
+
+
+//receiving data as a string of text...
+var song3 = "{ 'song_id': 1, 'title': 'Alive', 'length': 10}";
+
+//taking json object converting it to string
+var stringSong = JSON.stringify(song2);
+
+//following should take string and convert it to JSON object
+var song4 JSON.parse(stringSong);
+console.log(song4);
+
+
+	//document is the document object model
+	//event listener is attached 
+	//function - essentially creating event handler
+$(document).ready(function(){
+	song.id = 1;
+	song.title = "Alive";
+	song.length = "10";
+	
+	console.log("Song title: " + song.title);
+	console.log("Document loaded");
+	
+});
+	
+	
+*/
+
+</script>
+
+
+</head>
+
+
+<body>
+
+</body>
+</html>
