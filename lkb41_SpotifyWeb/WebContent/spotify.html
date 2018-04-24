@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Spotify</title>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+
+<script>
+$(document).ready(function(){
+	
+	$("#btnSearch").click(function(){
+		var searchTerm = $("#txtSearch").val();
+		var searchBy = $("#cboSearchby").val();
+		//search("title","stairway");
+		search(searchBy, searchTerm);
+	});
+	
+	/*
+	$("#txtSearch").keyup(function(){
+		var searchTerm =
+	});
+	*/
+	
+});
+
+
+//key is what were searching by artist, title, etc - val is the value 
+function search(key, val){
+	//concat key and value to get url
+	//ajax call?
+	var searchUrl = "api/get_songs?" + key + "=" + val; 
+	//console.log(searchUrl);
+	//data getting passed in is our json being returned by web service
+	$.get(searchUrl, function(data){
+			console.log(data);
+	//		songSearchResults(data);
+	});
+
+	
+}
+
+function songSearchResults(data){
+	var tbl = $("#tblData");
+	tbl.empty();	//jquery method that removes all children (removes all rows and cells -cells are children of rows)
+	for(var i=0; i<data.length; i++){
+		//console.log(data[i]);
+		var tr = $("<tr></tr>");	//this empty table row lives in memory right now - will add to DOM
+		var td = $("<td></td>");
+		td.html(data[i].title);
+		tr.append(td);
+		
+		td = $("<td></td>");
+		td.html(data[i].release_date);
+		tr.append(td);
+		
+		td = $("<td></td>");
+		td.html(data[i].length);
+		tr.append(td);
+		
+		tbl.append(tr);
+	}
+}
+
+</script>
+</head>
+
+<body>
+<div>
+	<select id="cboSearchBy">
+		<option value="title">Search by song title</option>
+		<option value="songYear">Search by song release year</option>
+		<option value="artist">Search by artist name</option>
+		<option value="album">Search by album name</option>
+	</select>
+	<br />
+	<input type="text" id="txtSearch" value="" />
+	<br />
+	<input type="button" id="btnSearch" value = "Search" />
+</div>
+
+<div>
+	<table id="tblData" border = "1" cellspacing="0" cellpadding="4">
+	
+	</table>
+</div>
+
+
+</body>
+</html>

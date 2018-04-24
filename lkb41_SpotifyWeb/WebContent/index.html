@@ -2,222 +2,528 @@
 <html>
 <head>
 <meta charset="ISO-8859-1">
-	<title>Spotify</title>
-	<style type= "text/css">
-		
-		* {
-			background-color: black;
-			box-sizing: border-box;
-			margin: 0;
-			font-family: Sans-serif;
-		}
-		
-		body {
-			height: 100%;
-			width: 100%;
-			overflow: hidden;
-			}
-		
-		#searchArea {
-			display: block;
-			position: fixed;
-			top: 0px;
-			width: 100%;
-			height: 40px;
-			padding-top: 7px;
-			text-align: center;
-			background: linear-gradient(to top, #8c8c8c 0%, #4d4d4d 100%);
-			border-style: double;
-		}
-		
-		#txtSearchBox {
-			position: fixed;	
-			background-color: white;
-			margin-left: 30px;
-			font-style: italic;
-		}
-		
-		#btnSubmitSearch {
-			overflow: hidden;
-			margin-left: 215px;
-			background-color: #b3b3b3;
-		}
-		
-		.radContainer {
-			color: white;
-			background-color: rgba(0,0,0,0);
-			padding: 3px;
-		}
-		
-		.leftBar {
-			position: fixed;
-			height: 85%;
-			width: 270px;
-			top:40px;
-			background: linear-gradient(to bottom, #8c8c8c 0%, #4d4d4d 100%);
-			border-style: double;
-		}
-		
-		#infoArea {
-			position: relative;
-			overflow-y: scroll;
-			overflow-x: hidden;
-			margin: 5px;
-			height: 55%;
-			color: white;
-		}
-		
-		#pictureArea {
-			position: relative;
-			margin: 5px;
-			padding: 20px;
-			height: 43%;
-			color: white;
-			text-align: center;
-		}
-		
-		#playArea {
-			display: block;
-			position: fixed;
-			text-align: center;
-			bottom: 0px;
-			width: 100%;
-			height: 52px;
-			background: linear-gradient(to top, #8c8c8c 0%, #4d4d4d 100%);
-			border-style: double;
-		}
-		
-		
-		#btnRewind {
-			margin-top: 10px;
-			background: url("001-arrows.png");
-			width: 28px;
-			height: 28px;
-			border-radius: 50%;
-		}
-		
-		#btnPlay {
-			margin-top: 10px;
-			margin-left: 15px;
-			margin-right: 15px;
-			background: url("004-play-button.png");
-			width: 28px;
-			height: 28px;
-			border-radius: 50%;
-		}
-		
-		#btnFastFwd {
-			margin-top: 10px;
-			background: url("002-fast-forward.png");
-			width: 28px;
-			height: 28px;
-			border-radius: 50%;
-		}
-		
-		#resultsTable {
-			overflow: scroll;
-			position: fixed; 
-			table-layout: fixed;
-			margin-top: 64px;
-			margin-left: 320px;
-			height: 77%;
-			width: 71%;
-			border: 1px solid #999999;
-			text-align: left;
-		}
-		
-		#headerTitle {
-			height: 15px;
-			width: 35%;
-		}
-		
-		#headerArtist {
-			height: 15px;
-			width: 30%;
-		}
-		
-		#headerLength {
-			height: 15px;
-			width: 10%;
-		}
-		
-		#headerAlbum {
-			height: 15px;
-			width: 25%;
-		}
-		
-		th, td {
-			border: 1px solid #808080;
-			color: white;
-			padding-left: 10px;
-			white-space: nowrap;
-			overflow: hidden;
-			background-color: #404040;
-		}
-		
-		
-	</style>
+<title>Spotify</title>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
+
+<script>
+
+//viewModel
+function SpotifyViewModel(){
+	self = this;
+	self.searchTerm = ko.observable("");
+	self.songList = ko.observableArray();
+	self.artistList = ko.observableArray();
+	self.albumList = ko.observableArray();
+	//no songs are initially playing
+	//self.songIsPlaying = ko.observable(false); 
+/*	
+	self.songStatus = ko.computed(function() {
+		return self.songIsPlaying() == true ? "songPlaying" : "songPaused";
+	}, this);
+*/
+
+	//big tables that will show details about either songs, artists, or albums
+	self.bigSongTable = ko.observableArray();
+	self.bigArtistTable = ko.observableArray();
+	self.bigAlbumTable = ko.observableArray();
 	
-	<script language="javascript">
-	/*
-		var table = ''
-		
-		//number of rows needs to be set to the number of returned rows from db
-		var rows = 2;
-		for (r=0; r<rows; r++){
+	//resources used to learn about knockout syntax listed at bottom of html doc
+	//these url variables are computed by adding the user's search term to the end of the url - these will be used
+	//in get methods to return matches from the database
+	self.songUrl = ko.computed(function() {
+	    return "api/get_songs?searchTerm=" + self.searchTerm();    
+	}, this);
+	
+	self.artistUrl = ko.computed(function() {
+	    return "api/get_artists?searchTerm=" + self.searchTerm();    
+	}, this);
+	
+	self.albumUrl = ko.computed(function() {
+		return "api/get_albums?searchTerm=" + self.searchTerm(); 
+	}, this);
+	
+	
+	//when a change is made to the searchTerm, all urls are updated - updates on these urls are tracked using subscribe 
+	//each url subscribe triggers the corresponding servlet, retrieving JSON data if there is a match
+	self.songUrl.subscribe(function(newValue){
+		//if the length of the search term is greater than 2 characters, then the search is performed
+		if(self.searchTerm().length > 2) {
 			
+			var mySongSearch = self.songUrl();
+			
+			$.get(mySongSearch, function(data){
+				console.log(data);
+				//data is stored in observable array
+				self.songList(data);
+
+			});//end of get
+		};//end of if
+	});//end of songUrl subscribe
+	
+	
+	
+	self.artistUrl.subscribe(function(newValue){
+		if(self.searchTerm().length > 2) {
+			
+			var myArtistSearch = self.artistUrl();
+			$.get(myArtistSearch, function(data){
+				console.log(data);
+				self.artistList(data);
+			
+			});//end of get		
+		};//end of if
+	});//end of artistUrl subscribe
+	
+	
+	
+	self.albumUrl.subscribe(function(newValue){
+		if(self.searchTerm().length > 2) {
+			
+			var myAlbumSearch = self.albumUrl();
+			$.get(myAlbumSearch, function(data){
+				console.log(data);
+				self.albumList(data);
+				
+			});//end of get	
+		}//end of if
+	});//end of albumUrl subscribe
+
+	
+	//the following searchBy functions will be bound to the "Search By .." buttons in the html body
+	self.searchBySong = function () {
+		
+		//set the other big tables to empty arrays so that they won't be visible on the page
+		self.bigArtistTable([]);
+		self.bigAlbumTable([]);
+		
+		//console.log("Artist array size: " + self.bigArtistTable().length + " Album: " + self.bigAlbumTable().length);
+
+		var mySongSearch = self.songUrl();
+		//set searchTerm to empty string so that the search area is not visible anymore
+		self.searchTerm("");
+		$.get(mySongSearch, function(data){
+			self.bigSongTable(data);
+		});//end of get
+	}//end of searchBySong function
+	
+	
+	self.searchByArtist = function() {
+		
+		//set the other big tables to empty arrays so that they won't be visible
+		self.bigSongTable([]);
+		self.bigAlbumTable([]);
+		//console.log("Song array size: " + self.bigSongTable().length + " Album: " + self.bigAlbumTable().length);
+		
+		var myArtistSearch = self.artistUrl();
+		self.searchTerm("");
+		$.get(myArtistSearch, function(data){
+			self.bigArtistTable(data);
+		});//end of get
+		
+	}//end of searchByArtist function
+	
+	
+	self.searchByAlbum = function () {
+		
+		//set the other big tables to empty arrays so that they won't be visible
+		self.bigSongTable([]);
+		self.bigArtistTable([]);
+		//console.log("Song array size: " + self.bigSongTable().length + " Artist: " + self.bigArtistTable().length);
+		
+		var myAlbumSearch = self.albumUrl();
+		self.searchTerm("");
+		$.get(myAlbumSearch, function(data){
+			self.bigAlbumTable(data);
+		});//end of get
+	}//end of searchByAlbum function
+
+	
+/*
+	
+	self.playPauseSong = function () {
+		
+		if(self.songIsPlaying()==true){
+			console.log("song was just playing -changing to pause");
+			console.log("file path: " + self.songList()[0].file_path);
+			self.songIsPlaying(false);
+		}else{
+			console.log("song was not just playing - changing to play");
+			console.log("file path: " + self.songList()[0].file_path);
+			self.songIsPlaying(true);
 		}
-	*/
-	</script>
+		
+	}//end of playSong function
+	
+*/	
 	
 	
+}//end of viewModel
+
+
+$(document).ready(function(){
+	ko.applyBindings(new SpotifyViewModel());	
+});//end of doc ready
+
+
+</script>
+
+
+<style type= "text/css">
+		
+	* {
+		background-color: black;
+		box-sizing: border-box;
+		margin: 0;
+		font-family: Sans-serif;
+	}
+		
+	body {
+		height: 100%;
+		width: 100%;
+		overflow: hidden;
+		}
+		
+	#searchArea {
+		display: block;
+		position: fixed;
+		top: 0px;
+		width: 100%;
+		height: 40px;
+		padding-top: 7px;
+		text-align: center;
+		background: linear-gradient(to top, #8c8c8c 0%, #4d4d4d 100%);
+		border-style: double;
+	}
+	
+	#dropDownResults {
+		position: absolute;
+		z-index: 1;
+		top: 40px;
+		width:100%;
+		height:200px;
+		background: linear-gradient(to top, #8c8c8c 0%, #4d4d4d 100%);
+	}
+	
+	#tblSongResults{
+		overflow-y: auto;
+		display: block;
+		position: relative;
+		width: 30%;
+		height: 90%;
+		top: 5%;
+		left: 1%;
+		background-color: #a6a6a6;
+		color: black;
+	}
+	
+	#tblArtistResults{
+		overflow-y: auto;
+		display: block;
+		position: absolute;
+		width: 30%;
+		height: 90%;
+		top: 5%;
+		left: 35%;
+		background-color: #a6a6a6;
+		color: black;	
+	}
+	
+	#tblAlbumResults{
+		overflow-y: auto;
+		display: block;
+		position: absolute;
+		width: 30%;
+		height: 90%;
+		top: 5%;
+		left: 68%;
+		background-color: #a6a6a6;
+		color: black;	
+	}	
+		
+	#txtSearchBox {
+		position: fixed;
+		left: 40%;	
+		background-color: white;
+		margin-left: 30px;
+		font-style: italic;
+	}
+		
+	.leftBar {
+		z-index: 0;
+		position: fixed;
+		height: 85%;
+		width: 270px;
+		top:40px;
+		background: linear-gradient(to bottom, #8c8c8c 0%, #4d4d4d 100%);
+		border-style: double;
+	}
+		
+	#infoArea {
+		position: relative;
+		overflow-y: scroll;
+		overflow-x: hidden;
+		margin: 5px;
+		height: 55%;
+		color: white;
+	}
+		
+	#pictureArea {
+		position: relative;
+		margin: 5px;
+ 		padding: 80px 26px 20px 26px;
+		height: 43%;
+		color: white;
+		text-align: center;
+	}
+		
+	#playArea {
+		display: block;
+		position: fixed;
+		text-align: center;
+		bottom: 0px;
+		width: 100%;
+		height: 52px;
+		background: linear-gradient(to top, #8c8c8c 0%, #4d4d4d 100%);
+		border-style: double;
+	}
+		
+	#btnRewind {
+		margin-top: 10px;
+		background: url("001-arrows.png");
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+	}
+		
+	#btnPlay {
+		margin-top: 10px;
+		margin-left: 15px;
+		margin-right: 5px;
+		background: url("004-play-button.png");
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+	}
+	
+	#btnPause {
+		margin-right: 15px;
+		background: url("pause_formatted3.png");
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;	
+	}	
+	
+	.songPlay {
+		margin-top: 10px;
+		margin-left: 15px;
+		margin-right: 15px;
+		background: url("004-play-button.png");
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+	}
+
+		
+	#btnFastFwd {
+		margin-top: 10px;
+		background: url("002-fast-forward.png");
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+	}
+	
+	.tblResults{
+		z-index: 0;
+		overflow-y: auto;
+		display: block;
+		position: fixed; 
+		table-layout: fixed;
+		margin-top: 64px;
+		margin-left: 320px;
+		height: 77%;
+		width: 71%;
+		border: 1px solid #999999;
+		text-align: left;
+	}
+		
+	td {
+		width: 30%;
+		color: white;
+		padding-left: 10px;
+		white-space: nowrap;
+		overflow: hidden;
+		background-color: #8c8c8c;
+	}
+	
+	td.artistRows {
+		width: auto;
+	}
+		
+	th {
+		border: 1px solid #808080;
+		width: 30%;
+		color: white;
+		padding-left: 10px;
+		white-space: nowrap;
+		overflow: hidden;
+		background-color: #808080;
+	}		
+			
+	.btnSearchBy {
+		background-color: #4d4d4d;
+		color: white;
+	}
+	
+	
+	
+	.songPlaying {
+		background: url("pause.png");
+	}	
+	
+	.songPaused {
+		background: url("004-play-button.png");
+	}
+			
+	#linkinParkSong {
+		display: none;
+	}		
+			
+	
+	.bigTableRows {
+		height:28px;
+	}
+	
+			
+</style>
+	
+
 	
 </head>
+
 <body>
-	<form id="searchArea">
-		<label class= "radContainer">
-			<input id="radArtist" type="radio" name="radSearchCriteria" value="artist" checked="checked"> Artist
-		</label>
-		<label class= "radContainer">
-			<input id="radAlbum" type="radio" name="radSearchCriteria" value="album"> Album 
-		</label>				
-		<label class= "radContainer">
-			<input id="radSong" type="radio" name="radSearchCriteria" value="song"> Song 
-		</label>
+	<div id="searchArea">
+		<input id="txtSearchBox" data-bind="textInput: searchTerm" type="text" name="txtSearchBox"/>
+	</div>
+	
+	
+	<div id="dropDownResults" data-bind="visible: searchTerm().length > 2">
 		
-		<input id="txtSearchBox" type="text" name="txtSearchBox" value="Search">
+		<table id="tblSongResults">
+			<thead>
+				<tr><th><button data-bind="click: $root.searchBySong" class="btnSearchBy">Search by Song</button></th></tr>
+			</thead>
+			<tbody data-bind="foreach: songList">
+				<tr>
+					<td data-bind="text: title"></td>
+				</tr>
+			</tbody>
+		</table>
 		
-		<input id="btnSubmitSearch" type="submit" value="Go!">
-	</form>
+		<table id="tblArtistResults">
+			<thead>
+				<tr><th colspan="3"><button data-bind="click: $root.searchByArtist" class="btnSearchBy">Search by Artist</button></th></tr>
+			</thead>
+			<tbody data-bind="foreach: artistList">
+				<tr>
+					<td class = "artistRows" data-bind="text: first_name"></td>
+					<td class = "artistRows" data-bind="text: last_name"></td>
+					<td class = "artistRows" data-bind="text: band_name"></td>
+				</tr>
+			</tbody>
+		</table>	
+			
+		<table id="tblAlbumResults">
+			<thead>
+				<tr><th><button data-bind="click: $root.searchByAlbum" class="btnSearchBy">Search by Album</button></th></tr>
+			</thead>
+			<tbody data-bind="foreach: albumList">
+				<tr>
+					<td data-bind="text: title"></td>
+				</tr>
+			</tbody>
+		</table>
+	
+	</div>
+
 	
 	<div class="leftBar">
 		<div id="infoArea">
-			info here 
+		
+		
+		<audio id="linkinParkSong" controls>
+			<source src = "mysongs/03 Somewhere I Belong.mp3" type="audio/mpeg">
+		</audio>
+		
+		
+		
 		</div>
-		<div id="pictureArea">
-			picture here
-		</div>
+		<div id="pictureArea">Press the play button to hear a sample song and then pause to stop!</div>
 	</div>
 	
-	<table id="resultsTable">
-		<tr class="header">
-			<th id="headerTitle">Title</th>
-			<th id="headerArtist">Artist</th>
-			<th id="headerLength">Length</th>
-			<th id="headerAlbum">Album</th>
-		</tr>
-		<tr class="rowOfInfo">
-			<td> </td>
-			<td> </td>
-			<td> </td>
-			<td> </td>
-		</tr>		
-
+	<table class="tblResults" data-bind="visible: bigSongTable().length > 0">
+		<thead>
+			<tr>
+				<th>Title</th>
+				<th>Length</th>
+				<th>Release Date</th>
+				<th>Record Date</th>
+			</tr>
+		</thead>
+		<tbody data-bind="foreach: bigSongTable">
+			<tr class="bigTableRows">
+				<td data-bind="text: title"></td>
+				<td data-bind="text: length"></td>
+				<td data-bind="text: release_date"></td>
+				<td data-bind="text: record_date"></td>
+			</tr>
+		</tbody>
+	</table>
+	
+	<table class="tblResults" data-bind="visible: bigArtistTable().length > 0">
+		<thead>
+			<tr>
+				<th>First Name</th>
+				<th>Last Name</th>
+				<th>Band Name</th>
+				<th>Biography</th>
+			</tr>
+		</thead>
+		<tbody data-bind="foreach: bigArtistTable">
+			<tr class="bigTableRows">
+				<td data-bind="text: first_name"></td>
+				<td data-bind="text: last_name"></td>
+				<td data-bind="text: band_name"></td>
+				<td data-bind="text: bio"></td>
+			</tr>
+		</tbody>
+	</table>
+	
+	<table class="tblResults" data-bind="visible: bigAlbumTable().length > 0">
+		<thead>
+			<tr>
+				<th>Title</th>
+				<th>Record Company</th>
+				<th>Release Date</th>
+				<th>Number of Tracks</th>
+				<th>Length</th>
+			</tr>
+		</thead>
+		<tbody data-bind="foreach: bigAlbumTable">
+			<tr class="bigTableRows">
+				<td data-bind="text: title"></td>
+				<td data-bind="text: recording_company_name"></td>
+				<td data-bind="text: release_date"></td>
+				<td data-bind="text: number_of_tracks"></td>
+				<td data-bind="text: length"></td>
+			</tr>
+		</tbody>
 	</table>
 	
 	<div id="playArea">
 		<button id="btnRewind"></button>
-		<button id="btnPlay"></button>
+		<button id="btnPlay" onclick="document.getElementById('linkinParkSong').play()"></button>
+		<button id="btnPause" onclick="document.getElementById('linkinParkSong').pause()"></button>
 		<button id="btnFastFwd"></button>
 	</div>
 	
@@ -229,6 +535,12 @@ resources used to learn html/css features:
 resource for play,rewind, and fast-forward icons:
 	https://www.flaticon.com/ 
 	-Icons made by Smashicons from www.flaticon.com
+resources for overlapping elements:
+	https://blog.udemy.com/css-overlay/
+resources for knockout (formatting, syntax, etc.)
+	http://knockoutjs.com/documentation/computedObservables.html
+	https://stackoverflow.com/questions/9543304/knockout-js-input-box-event-change-passes-old-value
+	http://knockoutjs.com/documentation/click-binding.html
 -->
 	
 </body>

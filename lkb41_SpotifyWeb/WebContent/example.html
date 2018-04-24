@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="ISO-8859-1">
+
+	<title>KnockoutJS textInput Binding </title>
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>	
+	
+	
+	
+</head>
+<body>
+
+
+	      <p> Enter your reviews here: <br><br><textarea rows=5 
+      data-bind = "textInput: someReview" ></textarea><br></p>
+      
+      <p> You entered : <span data-bind = "text: someReview"></span></p>
+
+      <script type = "text/javascript">
+         function ViewModel() {
+            this.someReview = ko.observable('');
+         };
+
+         var vm = new ViewModel();
+         ko.applyBindings(vm);
+      </script>
+</body>
+</html>
